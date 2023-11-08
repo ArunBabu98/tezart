@@ -14,7 +14,7 @@ enum TezartHttpErrorTypes {
 // Wrapper around DioError
 // complete missing methods if needed
 class TezartHttpError extends CommonException {
-  final http_client.DioError clientError;
+  final http_client.DioException clientError;
   final staticErrorsMessages = {
     TezartHttpErrorTypes.connectTimeout: 'Opening connection timed out',
     TezartHttpErrorTypes.receiveTimeout: 'Receiving connection timed out',
@@ -22,10 +22,12 @@ class TezartHttpError extends CommonException {
     TezartHttpErrorTypes.unhandled: 'Network Error',
   };
   final errorTypesMapping = {
-    http_client.DioErrorType.connectTimeout: TezartHttpErrorTypes.connectTimeout,
-    http_client.DioErrorType.receiveTimeout: TezartHttpErrorTypes.receiveTimeout,
-    http_client.DioErrorType.response: TezartHttpErrorTypes.response,
-    http_client.DioErrorType.cancel: TezartHttpErrorTypes.cancel,
+    http_client.DioExceptionType.connectionTimeout:
+        TezartHttpErrorTypes.connectTimeout,
+    http_client.DioExceptionType.receiveTimeout:
+        TezartHttpErrorTypes.receiveTimeout,
+    http_client.DioExceptionType.badResponse: TezartHttpErrorTypes.response,
+    http_client.DioExceptionType.cancel: TezartHttpErrorTypes.cancel,
   };
 
   TezartHttpError(this.clientError);
@@ -33,7 +35,8 @@ class TezartHttpError extends CommonException {
   dynamic get responseBody => _response?.data;
   int? get statusCode => _response?.statusCode;
   TezartHttpErrorTypes get type {
-    return errorTypesMapping[clientError.type] ?? TezartHttpErrorTypes.unhandled;
+    return errorTypesMapping[clientError.type] ??
+        TezartHttpErrorTypes.unhandled;
   }
 
   http_client.Response? get _response => clientError.response;
@@ -43,10 +46,11 @@ class TezartHttpError extends CommonException {
   @override
   String get message => _response?.statusMessage ?? staticErrorsMessages[type]!;
   @override
-  http_client.DioError get originalException => clientError;
+  http_client.DioException get originalException => clientError;
 }
 
-Future<T> catchHttpError<T>(Future<T> Function() func, {void Function(TezartHttpError)? onError}) async {
+Future<T> catchHttpError<T>(Future<T> Function() func,
+    {void Function(TezartHttpError)? onError}) async {
   try {
     return await func();
   } on TezartHttpError catch (e) {
